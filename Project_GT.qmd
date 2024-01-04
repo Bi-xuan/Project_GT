@@ -1,6 +1,8 @@
 ---
 title: "Project_GT"
 format: html
+author:
+  - Bixuan LIU
 ---
 
 # Build the Decision Tree
@@ -52,7 +54,7 @@ find_best_split <- function(X, y) {
   # Calculate impurity for the current node
   current_impurity <- calculate_impurity(y)
   
-  best_impurity_reduction <- 0
+  best_impurity <- Inf
   best_split <- NULL
   
   # Iterate through each unique value to find the best split
@@ -62,16 +64,15 @@ find_best_split <- function(X, y) {
     right_indices <- !left_indices
     
     if (sum(left_indices) > 0 && sum(right_indices) > 0) {
-      left_impurity <- calculate_impurity(y[left_indices])
-      right_impurity <- calculate_impurity(y[right_indices])
+      left_impurity <- calculate_impurity(y[left_indices])  # This is p1 in project.pdf
+      right_impurity <- calculate_impurity(y[right_indices]) # This is q1 in project.pdf
       
-      # Calculate impurity reduction
-      impurity_reduction <- current_impurity - (sum(left_indices) / m) * left_impurity -
-        (sum(right_indices) / m) * right_impurity
+      # Calculate gini impurity
+      current_impurity <- length(y[left_indices]) * left_impurity * (1 - left_impurity) + length(y[right_indices]) * right_impurity * (1 - right_impurity)
       
-      # Update best split if impurity reduction is higher
-      if (impurity_reduction > best_impurity_reduction) {
-        best_impurity_reduction <- impurity_reduction
+      # Update best split if impurity is lower
+      if (current_impurity < best_impurity) {
+        best_impurity <- current_impurity
         best_split <- list(threshold = threshold, left_indices = left_indices, right_indices = right_indices)
       }
     }
@@ -82,8 +83,7 @@ find_best_split <- function(X, y) {
 
 # Define a function to calculate Gini impurity
 calculate_impurity <- function(y) {
-  proportions <- table(y) / length(y)
-  impurity <- 1 - sum(proportions^2)
+  impurity <- sum(y) / length(y)
   return(impurity)
 }
 
@@ -101,6 +101,7 @@ predict_decision_tree <- function(tree, new_observation) {
 }
 ```
 
+
 # Use the Tree to Predict Labels
 
 ```{r}
@@ -111,11 +112,11 @@ data <- read.csv("project.csv")
 tree <- build_decision_tree(data$V1, data$V2)
 
 # Make predictions for a new observation
-new_obs <- c(1.2, -4, 3, -4.41443507454012, -3.98353225341726)
+new_obs <- c(1.2, -4, 3)
 for (new_ob in new_obs) {
   predicted_label <- predict_decision_tree(tree, new_ob)
   cat("Observation: ", new_ob, "\t", "Predicted Label: ", predicted_label, "\n")
 }
 ```
-
+Note: The code does not need additional R packages, so normally it should work.
 
