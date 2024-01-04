@@ -1,0 +1,121 @@
+---
+title: "Project_GT"
+format: html
+---
+
+# Build the Decision Tree
+
+```{r}
+# Define a class for a tree node
+TreeNode <- function(threshold = NULL, label = NULL, left = NULL, right = NULL) {
+  list(threshold = threshold, label = label, left = left, right = right)
+}
+
+# Define a function to build the decision tree
+build_decision_tree <- function(X, y, alpha = 8, depth = 0) {
+  unique_labels <- unique(y)
+  
+  # If only one class in the current node, create a leaf node
+  if (length(unique_labels) == 1) {
+    return(TreeNode(label = unique_labels))
+  }
+  
+  # If the number of observations is less than alpha, create a leaf node with the majority label
+  if (length(y) <= alpha) {
+    majority_label <- names(sort(table(y), decreasing = TRUE))[1]
+    return(TreeNode(label = majority_label))
+  }
+  
+  # Find the best split
+  best_split <- find_best_split(X, y)
+  
+  if (!is.null(best_split)) {
+    threshold <- best_split$threshold
+    left_indices <- best_split$left_indices
+    right_indices <- best_split$right_indices
+    
+    left_child <- build_decision_tree(X[left_indices], y[left_indices], depth + 1)
+    right_child <- build_decision_tree(X[right_indices], y[right_indices], depth + 1)
+    
+    return(TreeNode(threshold = threshold, left = left_child, right = right_child))
+  }
+  
+  # If no valid split found, create a leaf node with the majority label
+  majority_label <- names(sort(table(y), decreasing = TRUE))[1]
+  return(TreeNode(label = majority_label))
+}
+
+# Define a function to find the best split
+find_best_split <- function(X, y) {
+  m <- length(X)
+  
+  # Calculate impurity for the current node
+  current_impurity <- calculate_impurity(y)
+  
+  best_impurity_reduction <- 0
+  best_split <- NULL
+  
+  # Iterate through each unique value to find the best split
+  unique_values <- unique(X)
+  for (threshold in unique_values[-length(unique_values)]) {
+    left_indices <- X <= threshold
+    right_indices <- !left_indices
+    
+    if (sum(left_indices) > 0 && sum(right_indices) > 0) {
+      left_impurity <- calculate_impurity(y[left_indices])
+      right_impurity <- calculate_impurity(y[right_indices])
+      
+      # Calculate impurity reduction
+      impurity_reduction <- current_impurity - (sum(left_indices) / m) * left_impurity -
+        (sum(right_indices) / m) * right_impurity
+      
+      # Update best split if impurity reduction is higher
+      if (impurity_reduction > best_impurity_reduction) {
+        best_impurity_reduction <- impurity_reduction
+        best_split <- list(threshold = threshold, left_indices = left_indices, right_indices = right_indices)
+      }
+    }
+  }
+  
+  return(best_split)
+}
+
+# Define a function to calculate Gini impurity
+calculate_impurity <- function(y) {
+  proportions <- table(y) / length(y)
+  impurity <- 1 - sum(proportions^2)
+  return(impurity)
+}
+
+# Define a function to make predictions using the decision tree
+predict_decision_tree <- function(tree, new_observation) {
+  if (!is.null(tree$label)) {
+    return(tree$label)
+  }
+  
+  if (new_observation <= tree$threshold) {
+    return(predict_decision_tree(tree$left, new_observation))
+  } else {
+    return(predict_decision_tree(tree$right, new_observation))
+  }
+}
+```
+
+# Use the Tree to Predict Labels
+
+```{r}
+# Read data
+data <- read.csv("project.csv")
+
+# Build the decision tree
+tree <- build_decision_tree(data$V1, data$V2)
+
+# Make predictions for a new observation
+new_obs <- c(1.2, -4, 3, -4.41443507454012, -3.98353225341726)
+for (new_ob in new_obs) {
+  predicted_label <- predict_decision_tree(tree, new_ob)
+  cat("Observation: ", new_ob, "\t", "Predicted Label: ", predicted_label, "\n")
+}
+```
+
+
